@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "delay.h": "c",
+        "stdint.h": "c",
+        "io.h": "c",
+        "interrupt.h": "c"
+    }
+}
