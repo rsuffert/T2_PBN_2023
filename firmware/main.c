@@ -56,7 +56,6 @@ ISR(TIMER1_COMPA_vect)
 int main()
 {
     cli();                                                                        // disable interruptions
-    DDRC |= (1 << PC5) | (1 << PC4) | (1 << PC3);                                 // PC5 to PC3 -> output
     DDRD &= ~(1 << PD4) & ~(1 << PD3) & ~(1 << PD2) & ~(1 << PD1) & ~(1 << PD0);  // PD4 to PD0 -> input
     PORTD |= (1 << PD4) | (1 << PD3) | (1 << PD2) | (1 << PD1) | (1 << PD0);      // enabling internal pull-up
 
@@ -77,8 +76,8 @@ int main()
         seed++;
     }
 
-    sei();       // enable interruptions
     srand(seed); // set the seed
+    sei();       // enable interruptions
 
     while (!game_over)
     {
