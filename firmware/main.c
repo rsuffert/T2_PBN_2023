@@ -117,8 +117,12 @@ int main()
         bool pressed[5];
         for (int i=0; i<5; i++)
         {
-            if ((PIND & (1 << i)) == 0) pressed[i] = true;
-            else                        pressed[i] = false;
+            if ((PIND & (1 << i)) == 0) 
+            {
+                pressed[i] = true;
+                break; // consider the first button pressed only
+            }
+            else pressed[i] = false;
         }
 
         if (pressed[rand_whole] && is_out_of_whole) points_counter++; // hit
