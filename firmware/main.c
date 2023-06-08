@@ -27,7 +27,7 @@ uint16_t points_counter = 0;
 void timer1_init();
 
 /**
- * If the mole is currently visible, this function make it disappear; if it is hiding, it makes it appear.
+ * If the mole is currently visible, this function makes it disappear; if it is hiding, it makes it appear.
  * @whole: the whole where the mole should be rendered
  * @is_out_of_whole: indicates whether or not the mole is out of its whole
  * @WHOLES: the number of wholes in the game
