@@ -115,14 +115,16 @@ int main()
 
         // check which buttons are pressed
         bool pressed[5];
-        for (int i=0; i<5; i++)
+        for (int i=0; i<5; i++) // initialize all buttons as not pressed
+            pressed[i] = false;
+        
+        for (int i=0; i<5; i++) // get first pressed button
         {
             if ((PIND & (1 << i)) == 0) 
             {
                 pressed[i] = true;
                 break; // consider the first button pressed only
             }
-            else pressed[i] = false;
         }
 
         if (pressed[rand_whole] && is_out_of_whole) points_counter++; // hit
