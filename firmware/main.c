@@ -17,10 +17,9 @@
 
 #define GAME_DURATION_SEC              50
 
-bool game_over = false;
-uint16_t global_interruption_count = 0;
-uint16_t editable_interr_count = 1;
-uint16_t points_counter = 0;
+uint16_t global_interruption_count = 0; // used for telling when the game should end
+uint16_t editable_interr_count = 1;     // used for controlling when the mole should change its whole
+uint16_t points_counter = 0;            // counts how many times the player has hit the mole
 
 /**
  * Initiates/resets Timer 1.
@@ -34,6 +33,9 @@ void timer1_init();
  */
 void render_table(const uint8_t WHOLE, const uint8_t NWHOLES);
 
+/**
+ * Renders the timer and the points.
+ */
 void render_timer_points();
 
 /*
@@ -43,10 +45,9 @@ ISR(TIMER1_COMPA_vect)
 {
     global_interruption_count++;
     editable_interr_count++;
-    bool first_iteration = true;
-    if (global_interruption_count == GAME_DURATION_SEC+1)
+    if (global_interruption_count == GAME_DURATION_SEC+1) // game over
     {
-        while (((PIND & (1 << PD0)) != 0))  // while button has not been presssed
+        while (1)
         {
             nokia_lcd_clear();
             nokia_lcd_set_cursor(20, 0);
@@ -60,13 +61,7 @@ ISR(TIMER1_COMPA_vect)
             nokia_lcd_set_cursor(45, 40);
             nokia_lcd_write_string(points, 1);
             nokia_lcd_render();
-            if (first_iteration) // make sure the user doesn't end the game by mistake
-            {
-                _delay_ms(2000);
-                first_iteration = false;
-            }
         }
-        game_over = true;
     }
 }
 
@@ -99,14 +94,14 @@ int main()
     sei();       // enable interruptions
 
     // GAME LOGIC
-    uint16_t appear_duration_sec = 5;
+    const uint16_t APPEAR_DURATION_SEC = 5;
     const uint8_t WHOLES_BUTTONS = 5;
     uint8_t rand_whole = rand() % WHOLES_BUTTONS;
-    while (!game_over)
+    while (1)
     {
         render_timer_points();
 
-        if (editable_interr_count == appear_duration_sec) // change the whole where the mole should be
+        if (editable_interr_count == APPEAR_DURATION_SEC) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
         {
             rand_whole = rand() % WHOLES_BUTTONS;
             editable_interr_count = 1;
@@ -117,7 +112,6 @@ int main()
         bool pressed[WHOLES_BUTTONS];
         for (int i=0; i<WHOLES_BUTTONS; i++) // initialize all buttons as not pressed
             pressed[i] = false;
-        
         for (int i=0; i<WHOLES_BUTTONS; i++) // get first pressed button
         {
             if ((PIND & (1 << i)) == 0)
@@ -132,16 +126,17 @@ int main()
             }
         }
 
-        if (pressed[rand_whole]) // hit
+        if (pressed[rand_whole]) // hit (increment points_counter and get new random whole)
         {
             points_counter++;
-            rand_whole = rand() % WHOLES_BUTTONS; // get new random whole
+            rand_whole = rand() % WHOLES_BUTTONS;
         }
-        else // if the user guessed and got it wrong, get new random whole
+        else
         {
+            // check if the user guessed a whole (if so, that position in the array will be set to "true")
             for (int i=0; i<WHOLES_BUTTONS; i++)
             {
-                if (pressed[i])
+                if (pressed[i]) // if so, get new random whole
                 {
                     rand_whole = rand() % WHOLES_BUTTONS;
                     break;
@@ -149,8 +144,6 @@ int main()
             }
         }
     }
-
-    nokia_lcd_power(0); // turn off display
 }
 
 void render_timer_points()
