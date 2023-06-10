@@ -27,12 +27,13 @@ uint16_t points_counter = 0;
 void timer1_init();
 
 /**
- * If the mole is currently visible, this function makes it disappear; if it is hiding, it makes it appear.
- * @whole: the whole where the mole should be rendered
- * @is_out_of_whole: indicates whether or not the mole is out of its whole
- * @WHOLES: the number of wholes in the game
+ * Renders the table, drawing, for each of the five wholes, the character specified in the array passed as parameter.
+ * @WHOLE: the whole where the mole should be drawn
+ * @NWHOLES: the number of wholes in the game
  */
-void appear_disappear(uint8_t* whole, bool* is_out_of_whole, const uint8_t WHOLES);
+void render_table(const uint8_t WHOLE, const uint8_t NWHOLES);
+
+void render_timer_points();
 
 /*
  * Interruption routine for Timer 1.
@@ -40,6 +41,7 @@ void appear_disappear(uint8_t* whole, bool* is_out_of_whole, const uint8_t WHOLE
 ISR(TIMER1_COMPA_vect)
 {
     interruption_count++;
+    bool first_iteration = true;
     if (interruption_count == GAME_DURATION_SEC+1)
     {
         while (((PIND & (1 << PD0)) != 0))  // while button has not been presssed
@@ -56,6 +58,11 @@ ISR(TIMER1_COMPA_vect)
             nokia_lcd_set_cursor(45, 40);
             nokia_lcd_write_string(points, 1);
             nokia_lcd_render();
+            if (first_iteration) // make sure the user doesn't end the game by mistake
+            {
+                _delay_ms(2000);
+                first_iteration = false;
+            }
         }
         game_over = true;
     }
@@ -86,32 +93,20 @@ int main()
     }
     while ((PIND & (1 << PD0)) == 0); // wait for button release
 
-    sei();       // enable interruptions
     srand(seed); // set the seed
+    sei();       // enable interruptions
 
     // GAME LOGIC
     uint16_t appear_duration_sec = 5;
-    uint16_t count = 0;
-    const uint8_t WHOLES = 5;
-    uint8_t rand_whole;
-    bool is_out_of_whole = false;
-    const uint8_t LOOP_DELAY_MS = 50;
+    const uint8_t WHOLES_BUTTONS = 5;
+    uint8_t rand_whole = rand() % WHOLES_BUTTONS;
     while (!game_over)
     {
-        // render time & points
-        nokia_lcd_clear();
-        nokia_lcd_set_cursor(0, 40);
-        nokia_lcd_write_string("T/Pts: ", 1);
-        char t_pts[10];
-        sprintf(t_pts, "%d/%d", GAME_DURATION_SEC-interruption_count+1, points_counter);
-        nokia_lcd_set_cursor(39, 40);
-        nokia_lcd_write_string(t_pts, 1);
-        
-        if (count*LOOP_DELAY_MS/1000 < appear_duration_sec) 
-        {
-            appear_disappear(&rand_whole, &is_out_of_whole, WHOLES); // make mole appear/disappear
-            count = 0;
-        }
+        render_timer_points();
+
+        if (interruption_count%appear_duration_sec == appear_duration_sec-1) // change the whole where the mole should be
+            rand_whole = rand() % WHOLES_BUTTONS;
+        render_table(rand_whole, WHOLES_BUTTONS);
 
         // check which buttons are pressed
         bool pressed[5];
@@ -120,20 +115,69 @@ int main()
         
         for (int i=0; i<5; i++) // get first pressed button
         {
-            if ((PIND & (1 << i)) == 0) 
+            if ((PIND & (1 << i)) == 0)
             {
+                while((PIND & (1 << i)) == 0) // wait button release, but keep rendering the table
+                {
+                    render_timer_points();
+                    render_table(rand_whole, WHOLES_BUTTONS);
+                }
                 pressed[i] = true;
                 break; // consider the first button pressed only
             }
         }
 
-        if (pressed[rand_whole] && is_out_of_whole) points_counter++; // hit
-
-        nokia_lcd_render();
-        _delay_ms(LOOP_DELAY_MS);
+        if (pressed[rand_whole]) // hit
+        {
+            points_counter++;
+            rand_whole = rand() % WHOLES_BUTTONS; // get new random whole
+        }
+        else // if the user guessed and got it wrong, get new random whole
+        {
+            for (int i=0; i<WHOLES_BUTTONS; i++)
+            {
+                if (pressed[i])
+                {
+                    rand_whole = rand() % WHOLES_BUTTONS;
+                    break;
+                }
+            }
+        }
     }
 
     nokia_lcd_power(0); // turn off display
+}
+
+void render_timer_points()
+{
+    nokia_lcd_clear();
+    nokia_lcd_set_cursor(0, 40);
+    nokia_lcd_write_string("T/Pts: ", 1);
+    char t_pts[10];
+    sprintf(t_pts, "%d/%d", GAME_DURATION_SEC-interruption_count+1, points_counter);
+    nokia_lcd_set_cursor(39, 40);
+    nokia_lcd_write_string(t_pts, 1);
+}
+
+void render_table(const uint8_t WHOLE, const uint8_t NWHOLES)
+{
+    char whole_symbols[NWHOLES];
+    for(int i=0; i<NWHOLES; i++)
+        whole_symbols[i] = 'O';
+    
+    whole_symbols[WHOLE] = 'A';
+
+    nokia_lcd_set_cursor(10, 5);
+    nokia_lcd_write_char(whole_symbols[0], 1);
+    nokia_lcd_set_cursor(65, 5);
+    nokia_lcd_write_char(whole_symbols[1], 1);
+    nokia_lcd_set_cursor(37, 15);
+    nokia_lcd_write_char(whole_symbols[2], 1);
+    nokia_lcd_set_cursor(10, 25);
+    nokia_lcd_write_char(whole_symbols[3], 1);
+    nokia_lcd_set_cursor(65, 25);
+    nokia_lcd_write_char(whole_symbols[4], 1);
+    nokia_lcd_render();
 }
 
 void timer1_init()
@@ -144,20 +188,4 @@ void timer1_init()
     long unsigned int compare_value = (FREQ_CPU / PRESCALER) * PERIOD; // calculate compare value for PERIOD seconds
     OCR1A = compare_value;                                             // set compare value
     TIMSK1 |= (1 << OCIE1A);                                           // enable compare interruption A
-}
-
-void appear_disappear(uint8_t* whole, bool* is_out_of_whole, const uint8_t WHOLES)
-{
-    *whole = rand() % WHOLES; // get random whole to make the mole come out of it
-
-    if (*is_out_of_whole) // if mole is out of the whole
-    {
-        //TODO: render mole out of the whole (4 wholes and 1 mole)
-    }
-    else                  // if mole is in the whole
-    {
-        //TODO: render mole in the whole (5 wholes)
-    }
-
-    *is_out_of_whole = !(*is_out_of_whole);
 }
