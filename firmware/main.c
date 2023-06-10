@@ -43,21 +43,19 @@ ISR(TIMER1_COMPA_vect)
     editable_interr_count++;
     if (global_interruption_count >= GAME_DURATION_SEC+1) // game over
     {
-        while (1)
-        {
-            nokia_lcd_clear();
-            nokia_lcd_set_cursor(20, 0);
-            nokia_lcd_write_string("GAME", 2);
-            nokia_lcd_set_cursor(20, 20);
-            nokia_lcd_write_string("OVER", 2);
-            nokia_lcd_set_cursor(0, 40);
-            nokia_lcd_write_string("Points: ", 1);
-            char points[17];
-            sprintf(points, "%d", points_counter);
-            nokia_lcd_set_cursor(45, 40);
-            nokia_lcd_write_string(points, 1);
-            nokia_lcd_render();
-        }
+        nokia_lcd_clear();
+        nokia_lcd_set_cursor(20, 0);
+        nokia_lcd_write_string("GAME", 2);
+        nokia_lcd_set_cursor(20, 20);
+        nokia_lcd_write_string("OVER", 2);
+        nokia_lcd_set_cursor(0, 40);
+        nokia_lcd_write_string("Points: ", 1);
+        char points[17];
+        sprintf(points, "%d", points_counter);
+        nokia_lcd_set_cursor(45, 40);
+        nokia_lcd_write_string(points, 1);
+        nokia_lcd_render();
+        while (1);
     }
 }
 
@@ -161,7 +159,7 @@ void render_table(const uint8_t WHOLE, const uint8_t NWHOLES)
     for(int i=0; i<NWHOLES; i++)
         whole_symbols[i] = 'O';
     
-    whole_symbols[WHOLE] = 'A';
+    whole_symbols[WHOLE] = '&';
 
     nokia_lcd_set_cursor(37, 0);
     nokia_lcd_write_char(whole_symbols[0], 1);
