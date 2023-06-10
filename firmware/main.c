@@ -18,7 +18,8 @@
 #define GAME_DURATION_SEC              50
 
 bool game_over = false;
-uint16_t interruption_count = 0;
+uint16_t global_interruption_count = 0;
+uint16_t editable_interr_count = 1;
 uint16_t points_counter = 0;
 
 /**
@@ -40,9 +41,10 @@ void render_timer_points();
  */
 ISR(TIMER1_COMPA_vect)
 {
-    interruption_count++;
+    global_interruption_count++;
+    editable_interr_count++;
     bool first_iteration = true;
-    if (interruption_count == GAME_DURATION_SEC+1)
+    if (global_interruption_count == GAME_DURATION_SEC+1)
     {
         while (((PIND & (1 << PD0)) != 0))  // while button has not been presssed
         {
@@ -104,16 +106,19 @@ int main()
     {
         render_timer_points();
 
-        if (interruption_count%appear_duration_sec == appear_duration_sec-1) // change the whole where the mole should be
+        if (editable_interr_count == appear_duration_sec) // change the whole where the mole should be
+        {
             rand_whole = rand() % WHOLES_BUTTONS;
+            editable_interr_count = 1;
+        }
         render_table(rand_whole, WHOLES_BUTTONS);
 
         // check which buttons are pressed
-        bool pressed[5];
-        for (int i=0; i<5; i++) // initialize all buttons as not pressed
+        bool pressed[WHOLES_BUTTONS];
+        for (int i=0; i<WHOLES_BUTTONS; i++) // initialize all buttons as not pressed
             pressed[i] = false;
         
-        for (int i=0; i<5; i++) // get first pressed button
+        for (int i=0; i<WHOLES_BUTTONS; i++) // get first pressed button
         {
             if ((PIND & (1 << i)) == 0)
             {
@@ -123,7 +128,7 @@ int main()
                     render_table(rand_whole, WHOLES_BUTTONS);
                 }
                 pressed[i] = true;
-                break; // consider the first button pressed only
+                break;
             }
         }
 
@@ -154,7 +159,7 @@ void render_timer_points()
     nokia_lcd_set_cursor(0, 40);
     nokia_lcd_write_string("T/Pts: ", 1);
     char t_pts[10];
-    sprintf(t_pts, "%d/%d", GAME_DURATION_SEC-interruption_count+1, points_counter);
+    sprintf(t_pts, "%d/%d", GAME_DURATION_SEC-global_interruption_count+1, points_counter);
     nokia_lcd_set_cursor(39, 40);
     nokia_lcd_write_string(t_pts, 1);
 }
