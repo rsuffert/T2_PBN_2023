@@ -9,8 +9,6 @@
  * of the Licence, or (at your option) any later version.
  *
  * Original library written by SkewPL, http://skew.tk
- * 
- * Functions for drawing shapes (lines, rectangles, circles) added by Ricardo Süffert.
  */
 
 #ifndef __NOKIA_5110_H__
@@ -54,8 +52,34 @@ void nokia_lcd_clear(void);
 void nokia_lcd_power(uint8_t on);
 
 /**
+ * Desenha uma linha
+ * @x1: coord. x do ponto 1
+ * @y1: coord. y do ponto 1
+ * @x2: coord. x do ponto 2
+ * @y2: coord. y do ponto 2
+ */
+void nokia_lcd_drawline(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
+
+/**
+ * Desenha um retângulo
+ * @x1: coord. x de um dos cantos
+ * @y1: coord. y de um dos cantos
+ * @x2: coord. x do outro canto
+ * @y2: coord. y do outro canto
+ */
+void nokia_lcd_drawrect(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
+
+/**
+ * Desenha um círculo
+ * @x: coord. x do centro
+ * @y: coord. y do centro
+ * @r: raio em pixels
+ */
+void nokia_lcd_drawcircle(uint8_t x, uint8_t y, uint8_t r);
+
+/**
  * Set single pixel
- * @x: horizontal pozition
+ * @x: horizontal position
  * @y: vertical position
  * @value: show/hide pixel
  */
@@ -90,32 +114,6 @@ void nokia_lcd_render(void);
 /*
  * Define custom char (ASCII 0-31)
  */
-void nokia_lcd_custom(char code, uint8_t* glyph);
-
-/**
- * Draws a line.
- * @x1: x-coordinate of the first point of the line
- * @y1: y-coordinate of the first point of the line
- * @x2: x-coordinate of the second point of the line
- * @y2: y-coordinate of the second point of the line
- */
-void nokia_lcd_draw_line(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2);
-
-/**
- * Draws a circle.
- * @centerX: x-coordinate of the center point of the circle
- * @centerY: y-coordinate of the center point of the circle
- * @radius: the radius of the circle
- */
-void nokia_lcd_draw_circle(uint8_t centerX, uint8_t centerY, uint8_t radius);
-
-/**
- * Draws a rectangle.
- * @topLefX: x-coordinate of the top-left point of the rectangle
- * @topLefY: y-coordinate of the top-left point of the rectangle
- * @bottomRightX: x-coordinate of the bottom-right point of the rectangle
- * @bottomRightY: y-coordinate of the bottom-right point of the rectangle
- */
-void nokia_lcd_draw_rectangle(uint8_t topLeftX, uint8_t topLeftY, uint8_t bottomRightX, uint8_t bottomRightY);
+void nokia_lcd_custom(char code, uint8_t *glyph);
 
 #endif
