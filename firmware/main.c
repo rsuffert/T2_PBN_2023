@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 #include "nokia5110.h"
 
 /**
@@ -12,10 +13,12 @@
 #define PERIOD                         1
 
 /**
- * Durations
+ * Durations.
  */
-#define GAME_DURATION_SEC              60   // game duration, in seconds
-#define APPEAR_DURATION_SEC            1    // how long the mole stays out of its whole
+#define GAME_DURATION_SEC              60      // game duration, in seconds
+uint8_t appear_duration_sec         =  2;      // how long the mole stays out of its whole, in seconds
+const uint8_t REDUCTION_FREQ_SEC        =  30; // how often the appear_duration_sec will reduce, in seconds
+const float REDUCTION_FACT          =  0.5;    // by how much the appear_duration_sec will reduce
 
 uint16_t global_interruption_count = 0;     // used for controlling when the game should end
 uint16_t appear_duration_count = 0;         // used for controlling when the mole should change its whole
@@ -69,6 +72,13 @@ ISR(TIMER1_COMPA_vect)
         nokia_lcd_render();
         while (1);
     }
+
+    if (global_interruption_count%REDUCTION_FREQ_SEC == 0) // if REDUCTION_FREQ_SEC seconds have passed
+    {
+        // reduce appear_duration_sec by the REDUCTION_FACT
+        appear_duration_sec = round(appear_duration_sec - appear_duration_sec*REDUCTION_FACT);
+        if (appear_duration_sec < 1) appear_duration_sec = 1; // minimum is 1 second out of the whole
+    }
 }
 
 int main()
@@ -110,7 +120,7 @@ int main()
     {
         render_timer_points();
 
-        if (appear_duration_count >= APPEAR_DURATION_SEC) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
+        if (appear_duration_count >= appear_duration_sec) // if appear_duration_sec have passed, change the whole where the mole should be
             rand_whole = new_rand_whole(rand_whole, WHOLES_BUTTONS);
         render_table(rand_whole, WHOLES_BUTTONS);
 
