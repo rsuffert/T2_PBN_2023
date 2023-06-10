@@ -1,10 +1,6 @@
-#include <stdint.h>
-#include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <time.h>
 #include "nokia5110.h"
 
@@ -130,6 +126,7 @@ int main()
         {
             points_counter++;
             rand_whole = rand() % WHOLES_BUTTONS;
+            editable_interr_count = 1;
         }
         else
         {
@@ -142,6 +139,7 @@ int main()
                     break;
                 }
             }
+            editable_interr_count = 1;
         }
     }
 }
