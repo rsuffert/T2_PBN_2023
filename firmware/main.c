@@ -83,7 +83,6 @@ int main()
     nokia_lcd_clear();
 
     timer1_init();
-<<<<<<< HEAD
 
     // INITIAL SCREEN:
     nokia_lcd_set_cursor(7, 15);
@@ -95,7 +94,6 @@ int main()
     while (((PIND & (1 << PD0)) != 0))                               // while button has not been presssed, display the initial screen and "generate" seed
         seed++;
     while ((PIND & (1 << PD0)) == 0);                                // once the button has been pressed, wait for button release
-=======
 
     // render initial screen
     nokia_lcd_set_cursor(7, 15);
@@ -107,8 +105,6 @@ int main()
     while (((PIND & (1 << PD0)) != 0))                               // wait for user to press the button and begin game
         seed++;
     while ((PIND & (1 << PD0)) == 0); // wait for button release
->>>>>>> 3d2f52141ab5a50e1f9f12023c6e53cd1f4411fe
-
     srand(seed); // set the seed
     sei();       // enable interruptions
 
