@@ -11,10 +11,10 @@
 #define PRESCALER                      1024
 #define PERIOD                         1
 
-#define GAME_DURATION_SEC              50
+#define GAME_DURATION_SEC              60
 
 uint16_t global_interruption_count = 0; // used for telling when the game should end
-uint16_t editable_interr_count = 1;     // used for controlling when the mole should change its whole
+uint16_t editable_interr_count = 0;     // used for controlling when the mole should change its whole
 uint16_t points_counter = 0;            // counts how many times the player has hit the mole
 
 /**
@@ -41,7 +41,7 @@ ISR(TIMER1_COMPA_vect)
 {
     global_interruption_count++;
     editable_interr_count++;
-    if (global_interruption_count == GAME_DURATION_SEC+1) // game over
+    if (global_interruption_count >= GAME_DURATION_SEC+1) // game over
     {
         while (1)
         {
@@ -90,17 +90,17 @@ int main()
     sei();       // enable interruptions
 
     // GAME LOGIC
-    const uint16_t APPEAR_DURATION_SEC = 5;
+    const uint8_t APPEAR_DURATION_SEC = 1;
     const uint8_t WHOLES_BUTTONS = 5;
     uint8_t rand_whole = rand() % WHOLES_BUTTONS;
     while (1)
     {
         render_timer_points();
 
-        if (editable_interr_count == APPEAR_DURATION_SEC) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
+        if (editable_interr_count >= APPEAR_DURATION_SEC) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
         {
             rand_whole = rand() % WHOLES_BUTTONS;
-            editable_interr_count = 1;
+            editable_interr_count = 0;
         }
         render_table(rand_whole, WHOLES_BUTTONS);
 
@@ -126,7 +126,7 @@ int main()
         {
             points_counter++;
             rand_whole = rand() % WHOLES_BUTTONS;
-            editable_interr_count = 1;
+            editable_interr_count = 0;
         }
         else
         {
@@ -136,10 +136,10 @@ int main()
                 if (pressed[i]) // if so, get new random whole
                 {
                     rand_whole = rand() % WHOLES_BUTTONS;
+                    editable_interr_count = 0;
                     break;
                 }
             }
-            editable_interr_count = 1;
         }
     }
 }
@@ -163,15 +163,15 @@ void render_table(const uint8_t WHOLE, const uint8_t NWHOLES)
     
     whole_symbols[WHOLE] = 'A';
 
-    nokia_lcd_set_cursor(10, 5);
+    nokia_lcd_set_cursor(37, 0);
     nokia_lcd_write_char(whole_symbols[0], 1);
-    nokia_lcd_set_cursor(65, 5);
+    nokia_lcd_set_cursor(0, 15);
     nokia_lcd_write_char(whole_symbols[1], 1);
     nokia_lcd_set_cursor(37, 15);
     nokia_lcd_write_char(whole_symbols[2], 1);
-    nokia_lcd_set_cursor(10, 25);
+    nokia_lcd_set_cursor(72, 15);
     nokia_lcd_write_char(whole_symbols[3], 1);
-    nokia_lcd_set_cursor(65, 25);
+    nokia_lcd_set_cursor(37, 30);
     nokia_lcd_write_char(whole_symbols[4], 1);
     nokia_lcd_render();
 }
