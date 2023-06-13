@@ -169,7 +169,8 @@ void render_timer_points_misses(const uint8_t MISSES_IN_ROW)
     nokia_lcd_clear();
     
     // render misses
-    nokia_lcd_set_cursor(60, 0);
+    nokia_lcd_drawrect(52, 22, 82, 35);
+    nokia_lcd_set_cursor(55, 25);
     nokia_lcd_write_string("M:", 1);
     char misses[4];
     sprintf(misses, "%d", MISSES_IN_ROW);
