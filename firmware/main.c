@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
-#include <math.h>
 #include "nokia5110.h"
 
 /**
@@ -13,12 +12,11 @@
 #define PERIOD                         1
 
 /**
- * Durations.
+ * Durations
  */
-#define GAME_DURATION_SEC              60      // game duration, in seconds
-uint8_t appear_duration_sec         =  2;      // how long the mole stays out of its whole, in seconds
-const uint8_t REDUCTION_FREQ_SEC        =  30; // how often the appear_duration_sec will reduce, in seconds
-const float REDUCTION_FACT          =  0.5;    // by how much the appear_duration_sec will reduce
+#define GAME_DURATION_SEC              60   // game duration, in seconds
+#define APPEAR_DURATION_SEC            1    // how long the mole stays out of its whole
+#define MAX_MISSES_IN_SEQ              10   // how many misses the user can have in a row
 
 uint16_t global_interruption_count = 0;     // used for controlling when the game should end
 uint16_t appear_duration_count = 0;         // used for controlling when the mole should change its whole
@@ -37,9 +35,16 @@ void timer1_init();
 void render_table(const uint8_t WHOLE, const uint8_t NWHOLES);
 
 /**
- * Renders the timer and the points.
+ * Renders the timer, the points and how many times the user has missed the mole in a row.
+ * @param MISSES_IN_ROW how many times the user has missed the mole in a row
  */
-void render_timer_points();
+void render_timer_points_misses(const uint8_t MISSES_IN_ROW);
+
+/**
+ * This method ends the game by displaying the message "GAME OVER", how many points the user has scored and then enters in an infinite loop
+ * while the messages are kept on the screen.
+ */
+void game_over();
 
 /**
  * Randomly selects a new whole for the mole to appear, making sure the new whole is different from the previous.
@@ -56,29 +61,8 @@ ISR(TIMER1_COMPA_vect)
 {
     global_interruption_count++;
     appear_duration_count++;
-    if (global_interruption_count >= GAME_DURATION_SEC+1) // game over
-    {
-        nokia_lcd_clear();
-        nokia_lcd_set_cursor(20, 0);
-        nokia_lcd_write_string("GAME", 2);
-        nokia_lcd_set_cursor(20, 20);
-        nokia_lcd_write_string("OVER", 2);
-        nokia_lcd_set_cursor(0, 40);
-        nokia_lcd_write_string("Points: ", 1);
-        char points[17];
-        sprintf(points, "%d", points_counter);
-        nokia_lcd_set_cursor(45, 40);
-        nokia_lcd_write_string(points, 1);
-        nokia_lcd_render();
-        while (1);
-    }
-
-    if (global_interruption_count%REDUCTION_FREQ_SEC == 0) // if REDUCTION_FREQ_SEC seconds have passed
-    {
-        // reduce appear_duration_sec by the REDUCTION_FACT
-        appear_duration_sec = round(appear_duration_sec - appear_duration_sec*REDUCTION_FACT);
-        if (appear_duration_sec < 1) appear_duration_sec = 1; // minimum is 1 second out of the whole
-    }
+    if (global_interruption_count >= GAME_DURATION_SEC+1)
+        game_over();
 }
 
 int main()
@@ -116,11 +100,12 @@ int main()
     // GAME LOGIC
     const uint8_t WHOLES_BUTTONS = 5;             // how many wholes and buttons there are in the game
     uint8_t rand_whole = rand() % WHOLES_BUTTONS; // stores the current whole where the mole is
+    uint8_t misses_sequence = 0;                  // how many misses the user has made in a row
     while (1)
     {
-        render_timer_points();
+        render_timer_points_misses(misses_sequence);
 
-        if (appear_duration_count >= appear_duration_sec) // if appear_duration_sec have passed, change the whole where the mole should be
+        if (appear_duration_count >= APPEAR_DURATION_SEC) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
             rand_whole = new_rand_whole(rand_whole, WHOLES_BUTTONS);
         render_table(rand_whole, WHOLES_BUTTONS);
 
@@ -134,7 +119,7 @@ int main()
             {
                 while((PIND & (1 << i)) == 0) // wait button release, but keep rendering the points and table
                 {
-                    render_timer_points();
+                    render_timer_points_misses(misses_sequence);
                     render_table(rand_whole, WHOLES_BUTTONS);
                 }
                 pressed[i] = true;
@@ -145,6 +130,7 @@ int main()
         if (pressed[rand_whole]) // hit (increment points_counter and get new random whole)
         {
             points_counter++;
+            misses_sequence = 0;
             rand_whole = new_rand_whole(rand_whole, WHOLES_BUTTONS);
         }
         else                     // the user either did not try to hit the mole or missed it (guessed)
@@ -154,11 +140,15 @@ int main()
             {
                 if (pressed[i]) // the user took a guess and missed, get new random whole
                 {
+                    misses_sequence++;
                     rand_whole = new_rand_whole(rand_whole, WHOLES_BUTTONS);
                     break;
                 }
             }
         }
+
+        if (misses_sequence == MAX_MISSES_IN_SEQ)
+            game_over();
     }
 }
 
@@ -174,9 +164,18 @@ uint8_t new_rand_whole(const uint8_t CURRENT_WHOLE, const uint8_t NWHOLES)
     return randn;
 }
 
-void render_timer_points()
+void render_timer_points_misses(const uint8_t MISSES_IN_ROW)
 {
     nokia_lcd_clear();
+    
+    // render misses
+    nokia_lcd_set_cursor(60, 0);
+    nokia_lcd_write_string("M:", 1);
+    char misses[4];
+    sprintf(misses, "%d", MISSES_IN_ROW);
+    nokia_lcd_write_string(misses, 1);
+
+    // render times/points
     nokia_lcd_set_cursor(0, 41);
     nokia_lcd_write_string("T/Pts: ", 1);
     char t_pts[10];
@@ -205,6 +204,23 @@ void render_table(const uint8_t WHOLE, const uint8_t NWHOLES)
     nokia_lcd_write_char(whole_symbols[4], 1);
     nokia_lcd_drawline(0, 38, 84, 38); // divider
     nokia_lcd_render();
+}
+
+void game_over()
+{
+    nokia_lcd_clear();
+    nokia_lcd_set_cursor(20, 0);
+    nokia_lcd_write_string("GAME", 2);
+    nokia_lcd_set_cursor(20, 20);
+    nokia_lcd_write_string("OVER", 2);
+    nokia_lcd_set_cursor(0, 40);
+    nokia_lcd_write_string("Points: ", 1);
+    char points[17];
+    sprintf(points, "%d", points_counter);
+    nokia_lcd_set_cursor(45, 40);
+    nokia_lcd_write_string(points, 1);
+    nokia_lcd_render();
+    while (1);
 }
 
 void timer1_init()
