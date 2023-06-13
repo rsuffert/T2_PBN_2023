@@ -14,13 +14,16 @@
 /**
  * Durations
  */
-#define GAME_DURATION_SEC              60   // game duration, in seconds
-#define APPEAR_DURATION_SEC            1    // how long the mole stays out of its whole
-#define MAX_MISSES_IN_SEQ              10   // how many misses the user can have in a row
+#define GAME_DURATION_SEC              60    // game duration, in seconds
+#define MAX_MISSES_IN_SEQ              10    // how many misses the user can have in a row
 
-uint16_t global_interruption_count = 0;     // used for controlling when the game should end
-uint16_t appear_duration_count = 0;         // used for controlling when the mole should change its whole
-uint16_t points_counter = 0;                // counts how many times the player has hit the mole
+uint16_t global_interruption_count = 0;      // used for controlling when the game should end
+uint16_t appear_duration_count = 0;          // used for controlling when the mole should change its whole
+uint16_t points_counter = 0;                 // counts how many times the player has hit the mole
+uint8_t curr_appear_duration_sec = 4;        // how long the mole stays out of its whole
+
+#define FIRST_APPEAR_DUR_REDUCTION         10 // once the user hits this amount of points, the original value of curr_appear_duration_sec will be halved
+#define SECOND_APPEAR_DUR_REDUCTION        15 // once the user hits this amount of points, the original value of curr_appear_duration_sec will be divided by 4
 
 /**
  * Initiates/resets Timer 1.
@@ -101,12 +104,18 @@ int main()
     const uint8_t WHOLES_BUTTONS = 5;             // how many wholes and buttons there are in the game
     uint8_t rand_whole = rand() % WHOLES_BUTTONS; // stores the current whole where the mole is
     uint8_t misses_sequence = 0;                  // how many misses the user has made in a row
+
+    bool first_appear_red_done = false;
+    bool second_appear_red_done = false;
     while (1)
     {
         render_timer_points_misses(misses_sequence);
 
-        if (appear_duration_count >= APPEAR_DURATION_SEC) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
+        if (appear_duration_count >= curr_appear_duration_sec) // if APPEAR_DURATION_SEC have passed, change the whole where the mole should be
+        {
+            misses_sequence++;
             rand_whole = new_rand_whole(rand_whole, WHOLES_BUTTONS);
+        }
         render_table(rand_whole, WHOLES_BUTTONS);
 
         // check which buttons are pressed
@@ -149,6 +158,18 @@ int main()
 
         if (misses_sequence == MAX_MISSES_IN_SEQ)
             game_over();
+
+        // reduce appearance duration
+        if (!first_appear_red_done && points_counter == FIRST_APPEAR_DUR_REDUCTION)
+        {
+            first_appear_red_done = true;
+            curr_appear_duration_sec /= 2;
+        }
+        else if (!second_appear_red_done && points_counter == SECOND_APPEAR_DUR_REDUCTION)
+        {
+            second_appear_red_done = true;
+            curr_appear_duration_sec /= 2;
+        }
     }
 }
 
