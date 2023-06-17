@@ -15,9 +15,9 @@
  * Durations
  */
 #define GAME_DURATION_SEC              60   // game duration, in seconds
-#define MAX_MISSES_IN_SEQ              10    // how many misses the user can have in a row
+#define MAX_MISSES_IN_SEQ              15    // how many misses the user can have in a row
 float curr_appear_duration_sec       = 2.0; // how long the mole stays out of its whole
-#define APPEAR_DUR_REDUCTION_FACT      0.1  // each time the user hits the mole, the appear duration will reduce by this value
+#define APPEAR_DUR_REDUCTION_FACT      0.05  // each time the user hits the mole, the appear duration will reduce by this value
 
 // VALUES THAT SHOULD NOT BE CHANGED (DO NOT CHANGE!)
 float global_interruption_count = 0.0;                          // used for controlling when the game should end
@@ -132,13 +132,13 @@ int main()
                 break;
             }
         }
-
+        
         if (pressed[rand_whole]) // hit (increment points_counter and get new random whole)
         {
             points_counter++;
             misses_sequence = 0;
             curr_appear_duration_sec -= APPEAR_DUR_REDUCTION_FACT;
-            if (curr_appear_duration_sec < APPEAR_DUR_REDUCTION_FACT) curr_appear_duration_sec = APPEAR_DUR_REDUCTION_FACT;
+            if (curr_appear_duration_sec < 1/IRQ_FREQ) curr_appear_duration_sec = 1/IRQ_FREQ;
             rand_whole = new_rand_whole(rand_whole, WHOLES_BUTTONS);
         }
         else                     // the user either did not try to hit the mole or missed it (guessed)
